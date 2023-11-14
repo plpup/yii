@@ -5,22 +5,22 @@ namespace app\controllers;
 use Yii;
 use yii\web\Controller;
 use yii\data\Pagination;
-use app\models\Posts;
 use app\models\Post;
+use app\models\PostSearch;
+use app\models\PostQuery;
+use yii\data\ActiveDataProvider;
 
 class PostsController extends Controller
 { 
-    public function actionCreate() {
+    public function actionCreate() 
+    {
         $post = new Post();
         
-        // если пришли post-данные
         if ($post->load(Yii::$app->request->post())) {
-            // проверяем и сохраняем эти данные
             if ($post->save()) {
                 Yii::$app->session->setFlash('success','Успешно');
-                return $this->refresh();
-            }
-            else {
+                return $this->redirect('index');
+            }else {
                 Yii::$app->session->setFlash('unsuccess','Ошибка');
             }
         }
@@ -28,23 +28,48 @@ class PostsController extends Controller
         return $this->render('create', ['post' => $post]);
     }
 
+    public function actionUpdate($id)
+    {
+        $postQuery = new PostQuery();
+        $post = $postQuery->onePost($id);
+
+        if (!$post){
+            return $this->redirect(Yii::$app->request->referrer);
+        }
+
+        if ($post->load(Yii::$app->request->post())) {
+            if ($post->save()) {
+                Yii::$app->session->setFlash('success', 'Успешно');
+                return $this->redirect('index');
+            } else {
+                Yii::$app->session->setFlash('unsuccess', 'Ошибка');
+            }
+        }
+
+        return $this->render('update', ['post' => $post]);
+    }
+
+    public function actionDelete($id)
+    {
+        $postQuery = new PostQuery();
+        $post = $postQuery->onePost($id);
+        $post->delete();
+        return $this->redirect(['index']);
+    }
+
     public function actionIndex()
     {
-        $query = Posts::find();
-
-        $pagination = new Pagination([
-            'defaultPageSize' => 5,
-            'totalCount' => $query->count(),
-        ]);
-
-        $posts = $query->orderBy('title')
-            ->offset($pagination->offset)
-            ->limit($pagination->limit)
-            ->all();
-
+        $posts = new PostSearch();
+        $dataProvider = $posts->search(Yii::$app->request->queryParams);
+        
+        if (array_key_exists('reset', Yii::$app->request->get())) {
+            return $this->redirect(['index']);
+        }
+    
         return $this->render('index', [
-            'posts' => $posts,
-            'pagination' => $pagination,
+            'posts'  => $posts,
+            'dataProvider' => $dataProvider,
         ]);
+        
     }
 }

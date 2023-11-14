@@ -2,7 +2,7 @@
 
 use yii\views\_form;
 
-$this->title = 'Создать пост';
+$this->title = 'Изменить пост';
 ?>
 
 <?= $this->render('_form', [
